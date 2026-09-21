@@ -1,7 +1,39 @@
+```markdown
 # Software Design Patterns: Assignment 2
 
 This repository contains the implementation of creational design patterns in Java (JDK 17) as part of the Software Design Patterns course.
 
+---
+
+## Project Structure
+
+```text
+.
+├── AbstractFactory/          # Part B: Abstract Factory Pattern (UI Components)
+│   ├── Button.java           # Abstract Product: Button interface
+│   ├── Checkbox.java         # Abstract Product: Checkbox interface
+│   ├── GUIFactory.java       # Abstract Factory interface
+│   ├── MacOSButton.java      # Concrete Product for macOS
+│   ├── MacOSCheckbox.java    # Concrete Product for macOS
+│   ├── MacOSFactory.java     # Concrete Factory for macOS
+│   ├── WindowsButton.java    # Concrete Product for Windows
+│   ├── WindowsCheckbox.java  # Concrete Product for Windows
+│   └── WindowsFactory.java   # Concrete Factory for Windows
+├── FactoryMethod/            # Part A: Factory Method Pattern (Logistics)
+│   ├── Logistics.java        # Abstract Creator defining the factory method
+│   ├── RoadLogistics.java    # Concrete Creator for road transportation
+│   ├── SeaLogistics.java     # Concrete Creator for sea transportation
+│   ├── Ship.java             # Concrete Product implementing sea delivery
+│   ├── Transport.java        # Product interface
+│   └── Truck.java            # Concrete Product implementing road delivery
+├── DeliveryApplication.java  # Client application binding both patterns together
+├── Main.java                 # Entry point, CLI input processing, and validation
+├── .gitignore
+└── README.md
+
+```
+
+---
 
 ## Part A: Factory Method Pattern (Logistics)
 
@@ -48,59 +80,128 @@ The **Factory Method** pattern decouples the creator (`Logistics`) from the conc
 
 ```
 
-### How to Compile and Run
+---
 
-#### Prerequisites
+## Part B: Abstract Factory Pattern (UI Components)
+
+### Overview
+
+The **Abstract Factory** pattern provides an interface (`GUIFactory`) for creating families of related UI objects (`Button` and `Checkbox`) without specifying their concrete classes. This ensures consistency across different operating system themes (`Windows` and `macOS`).
+
+### Class Diagram
+
+```text
+       +------------------+                    +------------------+
+       |  <<interface>>   |                    |  <<interface>>   |
+       |      Button      |                    |     Checkbox     |
+       +------------------+                    +------------------+
+       | + paint()        |                    | + paint()        |
+       +------------------+                    +------------------+
+         ^              ^                        ^              ^
+         |              |                        |              |
++---------------+ +---------------+    +-----------------+ +---------------+
+| WindowsButton | |  MacOSButton  |    | WindowsCheckbox | | MacOSCheckbox |
++---------------+ +---------------+    +-----------------+ +---------------+
+| + paint()     | | + paint()     |    | + paint()       | | + paint()     |
++---------------+ +---------------+    +-----------------+ +---------------+
+        ^                 ^                    ^                 ^
+        : (creates)       : (creates)          : (creates)       : (creates)
+        :                 :                    :                 :
++-------------------+   +--------------------+ |                 |
+|  WindowsFactory   |   |    MacOSFactory    |-+-----------------+
++-------------------+   +--------------------+
+| + createButton()  |   | + createButton()   |
+| + createCheckbox()|   | + createCheckbox() |
++-------------------+   +--------------------+
+          |                       |
+          +-----------+-----------+
+                      |
+                      v
+            +-------------------+
+            |   <<interface>>   |
+            |    GUIFactory     |
+            +-------------------+
+            | + createButton()  |
+            | + createCheckbox()|
+            +-------------------+
+
+```
+
+---
+
+## Client Integration (`DeliveryApplication`)
+
+The `DeliveryApplication` class acts as the client that operates strictly on abstract interfaces (`Logistics`, `GUIFactory`, `Button`, `Checkbox`). It receives concrete instances via constructor injection, demonstrating loose coupling:
+
+```java
+public class DeliveryApplication {
+    private final Logistics logistics;
+    private final Button button;
+    private final Checkbox checkbox;
+
+    public DeliveryApplication(Logistics logistics, GUIFactory guiFactory) {
+        this.logistics = logistics;
+        this.button = guiFactory.createButton();
+        this.checkbox = guiFactory.createCheckbox();
+    }
+
+    public void run(String cargo, String destination) {
+        button.paint();
+        checkbox.paint();
+        logistics.planDelivery(cargo, destination);
+    }
+}
+
+```
+
+---
+
+## How to Compile and Run
+
+### Prerequisites
 
 * **Java Development Kit (JDK):** Version 17 or higher.
 
-#### 1. Compilation
+### 1. Compilation
 
-Navigate to the root directory of the repository in your terminal and compile all Java files inside the `FactoryMethod` package:
+Navigate to the root directory of the repository in your terminal and compile all Java files across packages:
 
 ```bash
-javac FactoryMethod/*.java
+javac FactoryMethod/*.java AbstractFactory/*.java *.java
 
 ```
 
-#### 2. Execution
+### 2. Execution
 
-Run the compiled `Main` class using the fully qualified package name:
+Run the compiled `Main` entry point class:
 
 ```bash
-java FactoryMethod.Main
-
-```
-
-### Input Validation & Behavior
-
-The application prompts the user to select a delivery mode (`ROAD` or `SEA`):
-
-* **Valid Input (`ROAD`):** Instantiates `RoadLogistics`, creates a `Truck`, and executes delivery by road.
-* **Valid Input (`SEA`):** Instantiates `SeaLogistics`, creates a `Ship`, and executes delivery by sea.
-* **Invalid Input:** Displays an error message (`Error: Invalid delivery mode...`) and terminates gracefully without throwing unhandled exceptions.
-
----
-
-## Part B: Abstract Factory Pattern
-
-*(To be updated after implementation)*
+java Main
 
 ```
 
 ---
 
-### Как закоммитить это на GitHub в пару кликов:
+## Input Validation & Test Cases
 
-1. Сохрани файл `README.md`.
-2. Нажми **`Ctrl` + `Shift` + `G`** (открыть панель Source Control в VS Code).
-3. Введи сообщение коммита: `docs: add README with Factory Method overview and diagram`.
-4. Нажми **`Ctrl` + `Enter`** (сделать коммит).
-5. Нажми **`Sync Changes`** или сделай `Git: Push` через `Ctrl` + `Shift` + `P`.
+The application prompts the user for two inputs:
 
-<ElicitationsGroup message="Что переходим делать дальше?">
-  <Elicitation label="Написать код для AbstractFactory (Button, Checkbox, GUIFactory)" query="Отлично! Теперь давай напишем классы для папки AbstractFactory."/>
-  <Elicitation label="Объединить FactoryMethod и AbstractFactory в классе DeliveryApplication" query="Давай создадим клиентский класс DeliveryApplication, который объединит оба паттерна вместе."/>
-</ElicitationsGroup>
+1. **Delivery Mode:** `ROAD` or `SEA`
+2. **UI Platform:** `WINDOWS` or `MACOS`
+
+### Supported Case Matrix
+
+| Delivery Input | UI Input | Output Execution |
+| --- | --- | --- |
+| `ROAD` | `WINDOWS` | Renders Windows Button & Checkbox + Truck Delivery |
+| `SEA` | `WINDOWS` | Renders Windows Button & Checkbox + Ship Delivery |
+| `ROAD` | `MACOS` | Renders macOS Button & Checkbox + Truck Delivery |
+| `SEA` | `MACOS` | Renders macOS Button & Checkbox + Ship Delivery |
+
+### Error Handling
+
+Invalid inputs (e.g., `AIR` or `LINUX`) trigger informative error messages (`Error: Invalid delivery mode...` / `Error: Invalid UI platform...`) and gracefully terminate without runtime exceptions.
+
+```
 
 ```
